@@ -508,6 +508,29 @@ class FnDeclNode extends DeclNode {
         myFormalsList = formalList;
         myBody = body;
     }
+    public void codegen(PrintWriter p){
+        p.println(" .text");
+        //Preamble
+        if(myId.name().equals("main")){
+            p.println(" .globl main");
+            p.println("main:");
+            p.println("__start");
+        }else{
+            p.println("_fctnName:");
+        }
+        //Prologue
+        //push ret addr
+        Codegen.genPush(Codegn.RA);
+        //push ctrl link
+        Codegen.genPush(Codegen.FP);
+        //set new FP
+        //FP = SP + 8 + sizeof(params)
+        //lw $FP, paramSize + 8($SP)
+        int sizeParams;
+        Codegen.generateIndexed("lw", Codegen.FP, Codegen.SP, 8+sizeParams);
+        //push space for local vars
+        //SP = SP - sizeof(locals)
+    }
 
     /**
      * nameAnalysis
