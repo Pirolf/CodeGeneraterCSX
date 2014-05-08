@@ -151,6 +151,7 @@ class ProgramNode extends ASTnode {
 }
 
 class DeclListNode extends ASTnode {
+    //NO CODEGEN for DeclListNode within FnBodyNode
     public DeclListNode(List<DeclNode> S) {
         myDecls = S;
     }
@@ -205,6 +206,7 @@ class DeclListNode extends ASTnode {
 }
 
 class FormalsListNode extends ASTnode {
+    //NO CODEGEN
     public FormalsListNode(List<FormalDeclNode> S) {
         myFormals = S;
     }
@@ -391,6 +393,7 @@ abstract class DeclNode extends ASTnode {
 }
 
 class VarDeclNode extends DeclNode {
+    //type name
     public VarDeclNode(TypeNode type, IdNode id, int size) {
         myType = type;
         myId = id;
@@ -473,7 +476,11 @@ class VarDeclNode extends DeclNode {
         
         return sym;
     }    
-    
+    public void codegen(PrintWriter p){
+        p.println(" .data");
+        p.println(" .align 2");
+        p.println("_" + myId.name() + ": .space 4");
+    }
     public void unparse(PrintWriter p, int indent) {
         doIndent(p, indent);
         myType.unparse(p, 0);
@@ -491,6 +498,7 @@ class VarDeclNode extends DeclNode {
 }
 
 class FnDeclNode extends DeclNode {
+    //NO CODEGEN for type, ID, formalslist 
     public FnDeclNode(TypeNode type,
                       IdNode id,
                       FormalsListNode formalList,
@@ -648,6 +656,7 @@ class FormalDeclNode extends DeclNode {
 }
 
 class StructDeclNode extends DeclNode {
+    //NO CODEGEN
     public StructDeclNode(IdNode id, DeclListNode declList) {
         myId = id;
         myDeclList = declList;
@@ -1537,6 +1546,7 @@ class IdNode extends ExpNode {
 }
 
 class DotAccessExpNode extends ExpNode {
+    //NO CODEGEN
     public DotAccessExpNode(ExpNode loc, IdNode id) {
         myLoc = loc;    
         myId = id;
