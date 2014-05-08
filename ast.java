@@ -184,8 +184,18 @@ class DeclListNode extends ASTnode {
      * typeCheck
      */
     public void typeCheck() {
+        boolean hasMain = false;
         for (DeclNode node : myDecls) {
+            if(node instanceof FnDeclNode){
+                String functionName = (FnDeclNode).fnName();
+                if(functionName.equals("main")){
+                    hasMain = true;
+                }
+            }
             node.typeCheck();
+        }
+        if(!hasMain){
+            ErrMsg.fatal(0, 0, "No main function");
         }
     }
     
@@ -609,7 +619,9 @@ class FnDeclNode extends DeclNode {
         myBody.unparse(p, indent+4);
         p.println("}\n");
     }
-
+    public String fnName(){
+        return myId.name();
+    }
     // 4 kids
     private TypeNode myType;
     private IdNode myId;
