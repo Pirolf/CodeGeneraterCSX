@@ -33,9 +33,12 @@ public class P6 {
         }
 
         // open output file
-        PrintWriter outFile = null;
+        //PrintWriter outFile = null;
+        Codegen.p = null;
+
         try {
-            outFile = new PrintWriter(args[1]);
+           // outFile = new PrintWriter(args[1]);
+            Codegen.p = new PrintWriter(args[1]);
         } catch (FileNotFoundException ex) {
             System.err.println("File " + args[1] +
                                " could not be opened for writing.");
@@ -50,21 +53,22 @@ public class P6 {
 
         try {
             root = P.parse(); // do the parse
-            System.out.println ("program parsed correctly.");
+           // System.out.println ("program parsed correctly.");
             //After parsing, if there are no syntax errors, it will call the name analyzer.
         } catch (Exception ex){
             System.err.println("Exception occured during parse: " + ex);
             System.exit(-1);
         }
         // if there are no errors so far
-        // (either scanning, parsing, or name-analysis errors), it will call the unparser.
+        // (either scanning, parsing, or name-analysis errors), 
+        //it will call the unparser.
         
         ((ProgramNode)root.value).nameAnalysis();
         // Call Type checker here
         ((ProgramNode)root.value).typeCheck();
         //((ASTnode)root.value).unparse(outFile, 0);
-        outFile.close();
-
+        //outFile.close();
+        Codegen.p.close();
         return;
     }
 }
