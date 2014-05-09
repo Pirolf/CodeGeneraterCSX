@@ -1578,17 +1578,20 @@ class StringLitNode extends ExpNode {
       if (lblMap == null)
          lblMap = new HashMap<String,String>();
       
+      // Check hashmap to see if our string is already in data
       String lbl = lblMap.get(myStrVal);
       if (lbl == null) {
          // Get next unique label and put that in our hashmap
          lbl = Codegen.nextLabel();
          lblMap.put(myStrVal, lbl);
+         // Store data for this string
          Codegen.generate(".data");
          String str = ".asciiz " + myStrVal;
          Codegen.generateLabeled(lbl,str,"");
          Codegen.generate(".text");
       }
-         
+
+      // Push lbl's address onto stack   
       Codegen.generate("la","$t0",lbl);
       Codegen.genPush("$t0");
     }
@@ -2535,7 +2538,27 @@ class DivideNode extends ArithmeticExpNode {
 class AndNode extends LogicalExpNode {
     public AndNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
-        myOp = "and";
+    }
+
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      // Get done label
+      String dLbl = Codegen.nextLabel();
+      
+      // Evaluate left expression, on zero, it's done
+      myExp1.codegen();
+      Codegen.genPop("$t0");
+      Codegen.generate("beq","$t0","0",dLbl);
+      
+      // Code for $t0 evaluated to 1 (whole exp evaluates to rh exp)
+      myExp2.codegen();
+      Codegen.genPop("$t0");
+      
+      // Make done lbl and push $t0 as the result
+      Codegen.genLabel(dLbl);
+      Codegen.genPush("$t0");
     }
     
     public void unparse(PrintWriter p, int indent) {
@@ -2552,7 +2575,26 @@ class OrNode extends LogicalExpNode {
         super(exp1, exp2);
         myOp = "or";
     }
-    
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      // Get done label
+      String dLbl = Codegen.nextLabel();
+
+      // Evaluate left expression, on one, it's done
+      myExp1.codegen();
+      Codegen.genPop("$t0");
+      Codegen.generate("beq","$t0","1",dLbl);
+
+      // Code for $t0 evaluated to 0 (whole exp evaluates to rh exp)
+      myExp2.codegen();
+      Codegen.genPop("$t0");
+
+      // Make done lbl and push $t0 as the result
+      Codegen.genLabel(dLbl);
+      Codegen.genPush("$t0");
+    }
     public void unparse(PrintWriter p, int indent) {
         p.print("(");
         myExp1.unparse(p, 0);
