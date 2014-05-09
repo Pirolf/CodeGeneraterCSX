@@ -1168,7 +1168,7 @@ class IfStmtNode extends StmtNode {
       Codegen.generate("beq","$t0","0",fLbl);
       // generate body's code & false label
       myStmtList.codegen();
-      Codegen.genLabel(fLbl);
+      Codegen.genLabel(fLbl, "endif");
     }
 
     /**
@@ -1256,9 +1256,9 @@ class IfElseStmtNode extends StmtNode {
       Codegen.generate("b",dLbl);
       
       // generate false label, false body's code & done label
-      Codegen.genLabel(fLbl);
+      Codegen.genLabel(fLbl, "else block");
       myElseStmtList.codegen();
-      Codegen.genLabel(dLbl);
+      Codegen.genLabel(dLbl, "end if-else");
     }
 
     /**
@@ -1346,7 +1346,20 @@ class WhileStmtNode extends StmtNode {
      * Generate MIPS code for this node
      */
     public void codegen() {
-      
+      // get eval & done labels
+      String eLbl = Codegen.nextLabel();
+      String dLbl = Codegen.nextLabel();
+
+      // gen eval label first (will need to reevaluate exp each loop iteration)
+      Codegen.genLabel(eLbl, "while condition");
+      myExp.codegen();
+      Codegen.genPop("$t0");
+      Codegen.generate("beq","$t0","0",dLbl);
+
+      // generate body's code, unconditional br back to elbl & gen dLbl
+      myStmtList.codegen();
+      Codegen.generate("b",eLbl);
+      Codegen.genLabel(dLbl, "end while");
     }
     /**
      * nameAnalysis
@@ -2120,7 +2133,19 @@ abstract class BinaryExpNode extends ExpNode {
         myExp1 = exp1;
         myExp2 = exp2;
     }
-    
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      // eval lh exp & rh exp, pop into $t0 & $t1
+      myExp1.codegen();
+      myExp2.codegen();
+      Codegen.genPop("$t1");
+      Codegen.genPop("$t0");
+      Codegen.generate(myOp, "$t0","$t0", "$t1");
+      Codegen.genPush("$t0");
+    }
+
     /**
      * Return the line number for this binary expression node. 
      * The line number is the one corresponding to the left operand.
@@ -2150,6 +2175,7 @@ abstract class BinaryExpNode extends ExpNode {
     // two kids
     protected ExpNode myExp1;
     protected ExpNode myExp2;
+    protected String myOp;
 }
 
 // **********************************************************************
@@ -2160,7 +2186,23 @@ class UnaryMinusNode extends UnaryExpNode {
     public UnaryMinusNode(ExpNode exp) {
         super(exp);
     }
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      System.out.println("UnaryMinusNode's codegen called");
+      
+      // Evaluate expression & pop into $t0
+      myExp.codegen();
+      Codegen.genPop("$t0");
+      
+      // Subtract $t0 from 0
+      Codegen.generate("li", "$t1", 0);
+      Codegen.generate("sub","$t0","$t1","$t0");
 
+      // Push result
+      Codegen.genPush("$t0");
+    }
     /**
      * typeCheck
      */
@@ -2192,7 +2234,23 @@ class NotNode extends UnaryExpNode {
     public NotNode(ExpNode exp) {
         super(exp);
     }
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      System.out.println("NotNode's codegen called");
 
+      // eval myExp and put in $t0
+      myExp.codegen();
+      Codegen.genPop("$t0");
+      
+      // Don't want to use bitwise not, instead do 1-$t0
+      Codegen.generate("li","$t1",1);
+      Codegen.generate("sub","$t0","$t1","$t0");
+      
+      // Push result onto stack
+      Codegen.genPush("$t0");
+    }
     /**
      * typeCheck
      */
@@ -2377,6 +2435,7 @@ abstract class RelationalExpNode extends BinaryExpNode {
 class PlusNode extends ArithmeticExpNode {
     public PlusNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
+        myOp = "add";
     }
     
     public void unparse(PrintWriter p, int indent) {
@@ -2391,6 +2450,7 @@ class PlusNode extends ArithmeticExpNode {
 class MinusNode extends ArithmeticExpNode {
     public MinusNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
+        myOp = "sub";
     }
     
     public void unparse(PrintWriter p, int indent) {
@@ -2407,6 +2467,21 @@ class TimesNode extends ArithmeticExpNode {
         super(exp1, exp2);
     }
 
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      // Do mostly the same as binexp node
+      myExp1.codegen();
+      myExp2.codegen();
+      Codegen.genPop("$t1");
+      Codegen.genPop("$t0");
+      Codegen.generate("mult", "$t0","$t1");
+      
+      // Mult's a little weird, so move value from LO & push
+      Codegen.generate("mflo","$t0");
+      Codegen.genPush("$t0");
+    }
     
     public void unparse(PrintWriter p, int indent) {
         p.print("(");
@@ -2421,7 +2496,23 @@ class DivideNode extends ArithmeticExpNode {
     public DivideNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
     }
-    
+
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      // Do mostly the same as binexp node
+      myExp1.codegen();
+      myExp2.codegen();
+      Codegen.genPop("$t1");
+      Codegen.genPop("$t0");
+      Codegen.generate("div", "$t0","$t1");
+      
+      // Div's a little weird, so move value from LO & push
+      Codegen.generate("mflo","$t0");
+      Codegen.genPush("$t0");
+    }
+
     public void unparse(PrintWriter p, int indent) {
         p.print("(");
         myExp1.unparse(p, 0);
@@ -2434,6 +2525,7 @@ class DivideNode extends ArithmeticExpNode {
 class AndNode extends LogicalExpNode {
     public AndNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
+        myOp = "and";
     }
     
     public void unparse(PrintWriter p, int indent) {
@@ -2448,6 +2540,7 @@ class AndNode extends LogicalExpNode {
 class OrNode extends LogicalExpNode {
     public OrNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
+        myOp = "or";
     }
     
     public void unparse(PrintWriter p, int indent) {
