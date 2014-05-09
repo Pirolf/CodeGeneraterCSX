@@ -8,7 +8,7 @@
 ###
 
 JC = javac
-P6.class: P6.java parser.class Yylex.class ASTnode.class
+P6.class: P6.java parser.class Yylex.class ASTnode.class Codegen.class
 	$(JC) -g P6.java
 
 parser.class: parser.java ASTnode.class Yylex.class ErrMsg.class
@@ -38,8 +38,11 @@ Sym.java: CSX.cup
 ErrMsg.class: ErrMsg.java
 	$(JC) ErrMsg.java
 
-ErrorMessages.class: ErrorMessages.java
-	$(JC) ErrorMessages.java
+Codegen.class: Codegen.java
+	$(JC) Codegen.java
+#ErrorMessages.class: ErrorMessages.java
+#	$(JC) ErrorMessages.java
+
 ###
 # clean
 ###
