@@ -693,7 +693,7 @@ class FnDeclNode extends DeclNode {
     public void typeCheck() {
         myBody.typeCheck(myType.type());
     }
-        
+     
     public void unparse(PrintWriter p, int indent) {
         doIndent(p, indent);
         myType.unparse(p, 0);
