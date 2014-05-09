@@ -1089,7 +1089,7 @@ class WriteStmtNode extends StmtNode {
       myExp.codegen();
       Codegen.genPop("$a0");
 
-      // put correct value into $v0 depending on type
+      // put correct value into $v0 depending on type(int & bool get 1, str 4)
       if (writeType.isIntType())
          Codegen.generate("li","$v0",1);
       if (writeType.isBoolType())
@@ -1155,6 +1155,23 @@ class IfStmtNode extends StmtNode {
     }
     
     /**
+     * Generates MIPS code for this node
+     */
+    public void codegen() {
+      System.out.println("IfStmtNode's codegen called");
+      // no need to gen code for decllist, get false label
+      String fLbl = Codegen.nextLabel();
+      // evaluate exp
+      myExp.codegen();
+      Codegen.genPop("$t0");
+      // branch on exp evals to false (numeric approach!)
+      Codegen.generate("beq","$t0","0",fLbl);
+      // generate body's code & false label
+      myStmtList.codegen();
+      Codegen.genLabel(fLbl);
+    }
+
+    /**
      * nameAnalysis
      * Given a symbol table symTab, do:
      * - process the condition
@@ -1218,6 +1235,32 @@ class IfElseStmtNode extends StmtNode {
         myElseStmtList = slist2;
     }
     
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      System.out.println("IfElseStmtNode's codegen called");
+      // get false & done labels
+      String fLbl = Codegen.nextLabel();
+      String dLbl = Codegen.nextLabel();
+      
+      // Evaluate expression
+      myExp.codegen();
+      Codegen.genPop("$t0");
+      
+      // branch on exp evals to false (numeric approach!)
+      Codegen.generate("beq","$t0","0",fLbl);
+      
+      // generate true body's code & unconditional br to done label
+      myThenStmtList.codegen();
+      Codegen.generate("b",dLbl);
+      
+      // generate false label, false body's code & done label
+      Codegen.genLabel(fLbl);
+      myElseStmtList.codegen();
+      Codegen.genLabel(dLbl);
+    }
+
     /**
      * nameAnalysis
      * Given a symbol table symTab, do:
@@ -1299,7 +1342,12 @@ class WhileStmtNode extends StmtNode {
         myDeclList = dlist;
         myStmtList = slist;
     }
-    
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      
+    }
     /**
      * nameAnalysis
      * Given a symbol table symTab, do:
