@@ -2418,6 +2418,34 @@ abstract class RelationalExpNode extends BinaryExpNode {
     }
     
     /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      System.out.println("RelationalExpNode's codegen called");
+      // Get true & done labels
+      String tLbl = Codegen.nextLabel();
+      String dLbl = Codegen.nextLabel();
+
+      // Eval both exp's, pop them from stack, subtract & put in $t0
+      myExp1.codegen();
+      myExp2.codegen();
+      Codegen.genPop("$t1");
+      Codegen.genPop("$t0");
+      Codegen.generate("sub","$t0","$t0","$t1");
+
+      // Jump to tLbl on op & put 1 in t0, otherwise put 0 & jump to done
+      Codegen.generate(myOp,"$t0",tLbl);
+      Codegen.generate("li","$t0",0);
+      Codegen.generate("b", dLbl);
+      Codegen.genLabel(tLbl);
+
+      // Op is true, so put 1 in $t0
+      Codegen.generate("li","$t0",1);
+      Codegen.genLabel(dLbl);
+      Codegen.genPush("$t0");
+    }
+    
+    /**
      * typeCheck
      */
     public Type typeCheck() {
@@ -2616,7 +2644,7 @@ class EqualsNode extends EqualityExpNode {
       // Get equals & done labels
       String eLbl = Codegen.nextLabel();
       String dLbl = Codegen.nextLabel();
-
+      
       // Eval both exp's and pop them from stack
       myExp1.codegen();
       myExp2.codegen();
@@ -2628,6 +2656,7 @@ class EqualsNode extends EqualityExpNode {
       Codegen.generate("li","$t0",0);
       Codegen.generate("b", dLbl);
       Codegen.genLabel(eLbl);
+      
       // Equals, so put 1 in $t0
       Codegen.generate("li","$t0",1);
       Codegen.genLabel(dLbl);
@@ -2655,18 +2684,19 @@ class NotEqualsNode extends EqualityExpNode {
       // Get equals & done labels
       String eLbl = Codegen.nextLabel();
       String dLbl = Codegen.nextLabel();
-
+      
       // Eval both exp's and pop them from stack
       myExp1.codegen();
       myExp2.codegen();
       Codegen.genPop("$t1");
       Codegen.genPop("$t0");
-
+      
       // Jump to eqlbl on equals & put 0 in t0, otherwise put 1 & jump to done
       Codegen.generate("beq","$t0","$t1",eLbl);
       Codegen.generate("li","$t0",1);
       Codegen.generate("b", dLbl);
       Codegen.genLabel(eLbl);
+      
       // Equals, so put 0 in $t0
       Codegen.generate("li","$t0",0);
       Codegen.genLabel(dLbl);
@@ -2684,6 +2714,7 @@ class NotEqualsNode extends EqualityExpNode {
 class LessNode extends RelationalExpNode {
     public LessNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
+        myOp = "bltz";
     }
     
     public void unparse(PrintWriter p, int indent) {
@@ -2698,6 +2729,7 @@ class LessNode extends RelationalExpNode {
 class GreaterNode extends RelationalExpNode {
     public GreaterNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
+        myOp = "bgtz";
     }
 
     public void unparse(PrintWriter p, int indent) {
@@ -2712,6 +2744,7 @@ class GreaterNode extends RelationalExpNode {
 class LessEqNode extends RelationalExpNode {
     public LessEqNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
+        myOp = "blez";
     }
 
     public void unparse(PrintWriter p, int indent) {
@@ -2726,6 +2759,7 @@ class LessEqNode extends RelationalExpNode {
 class GreaterEqNode extends RelationalExpNode {
     public GreaterEqNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
+        myOp = "bgez";
     }
 
     public void unparse(PrintWriter p, int indent) {
