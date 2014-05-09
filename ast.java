@@ -297,8 +297,11 @@ class FnBodyNode extends ASTnode {
         myDeclList = declList;
         myStmtList = stmtList;
     }
+    /**
+     * Generate MIPS code for this node
+     */
     public void codegen(){
-        //TODO
+      myStmtList.codegen();
     }
 
     /**
@@ -337,7 +340,14 @@ class StmtListNode extends ASTnode {
     public StmtListNode(List<StmtNode> S) {
         myStmts = S;
     }
-
+    
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      for (StmtNode n : myStmts)
+         n.codegen();
+    }
     /**
      * nameAnalysis
      * Given a symbol table symTab, process each statement in the list.
@@ -525,11 +535,14 @@ class VarDeclNode extends DeclNode {
         }
         
         return sym;
-    }    
-    public void codegen(PrintWriter p){
-        p.println(" .data");
-        p.println(" .align 2");
-        p.println("_" + myId.name() + ": .space 4");
+    }
+           //load ret addr
+ 
+    // Make sure this only gets called for glbl vars!
+    public void codegen(){
+        Codegen.generate(" .data");
+        Codegen.generate(" .align 2");
+        Codegen.generateLabeled("_" + myId.name(), ".space "+myType.size(),"");
     }
     public void unparse(PrintWriter p, int indent) {
         doIndent(p, indent);
@@ -565,7 +578,7 @@ class FnDeclNode extends DeclNode {
         int sizeParams = ((FnSym)(myId.sym())).getParamsSize();
         int sizeLocals = ((FnSym)(myId.sym())).getLocalsSize();
 
-        Codegen.generate(" .text");
+        Codegen.generate(".text");
         //Preamble
         if (isMain) {
          Codegen.generate(".globl main");
@@ -837,13 +850,14 @@ class StructDeclNode extends DeclNode {
 abstract class TypeNode extends ASTnode {
     /* all subclasses must provide a type method */
     abstract public Type type();
+    public int size() { return 4;}
 }
 
 class IntNode extends TypeNode {
     public IntNode() {
     }
-
-    /**
+    
+     /**
      * type
      */
     public Type type() {
@@ -919,6 +933,8 @@ class StructNode extends TypeNode {
 abstract class StmtNode extends ASTnode {
     abstract public void nameAnalysis(SymTable symTab);
     abstract public void typeCheck(Type retType);
+    // default codegen for StmtNode
+    public void codegen() { }
 }
 
 class AssignStmtNode extends StmtNode {
@@ -1076,7 +1092,29 @@ class WriteStmtNode extends StmtNode {
     public WriteStmtNode(ExpNode exp) {
         myExp = exp;
     }
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      myExp.codegen();
+      Codegen.genPop("$a0");
 
+      // put correct value into $v0 depending on type
+      if (writeType.isIntType())
+         Codegen.generate("li","$v0",1);
+      if (writeType.isBoolType())
+         Codegen.generate("li","$v0",1);
+      if (writeType.isStringType())
+         Codegen.generate("li", "$v0", 4);
+      
+      // Perform syscall
+      Codegen.generate("syscall");
+    }
+
+    // string writing helper
+    private void strgen() {
+      
+    }
     /**
      * nameAnalysis
      * Given a symbol table symTab, perform name analysis on this node's child
@@ -1428,6 +1466,8 @@ abstract class ExpNode extends ASTnode {
     abstract public Type typeCheck();
     abstract public int lineNum();
     abstract public int charNum();
+    // default codegen method
+    public void codegen() { }
 }
 
 class IntLitNode extends ExpNode {
@@ -1437,6 +1477,15 @@ class IntLitNode extends ExpNode {
         myIntVal = intVal;
     }
     
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      // Push this node's value onto the stack
+      Codegen.generate("li","$t0",myIntVal);
+      Codegen.genPush("$t0");
+    }
+
     /**
      * Return the line number for this literal.
      */
@@ -1475,6 +1524,20 @@ class StringLitNode extends ExpNode {
     }
     
     /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      // Get next unique label and push that address to the stack
+      Codegen.generate(".data");
+      String lbl = Codegen.nextLabel();
+      String str = ".asciiz " + myStrVal;
+      Codegen.generateLabeled(lbl,str,"");
+      Codegen.generate(".text");
+      Codegen.generate("la","$t0",lbl);
+      Codegen.genPush("$t0");
+    }
+
+    /**
      * Return the line number for this literal.
      */
     public int lineNum() {
@@ -1511,6 +1574,15 @@ class TrueNode extends ExpNode {
     }
 
     /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      // Push true value onto the stack
+      Codegen.generate("li","$t0",1);
+      Codegen.genPush("$t0");
+    }
+
+    /**
      * Return the line number for this literal.
      */
     public int lineNum() {
@@ -1543,6 +1615,14 @@ class FalseNode extends ExpNode {
     public FalseNode(int lineNum, int charNum) {
         myLineNum = lineNum;
         myCharNum = charNum;
+    }
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      // Push false value onto the stack
+      Codegen.generate("li","$t0",0);
+      Codegen.genPush("$t0");
     }
 
     /**
@@ -1580,7 +1660,12 @@ class IdNode extends ExpNode {
         myCharNum = charNum;
         myStrVal = strVal;
     }
-
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      // This one is a little tricky... do later!
+    }
     /**
      * Link the given symbol to this ID.
      */
