@@ -540,10 +540,29 @@ class FnDeclNode extends DeclNode {
         //set new FP
         //FP = SP + 8 + sizeof(params)
         //lw $FP, paramSize + 8($SP)
-        int sizeParams;
+        int sizeParams = ((FnSym)(myId.sym())).getParamsSize();
         Codegen.generateIndexed("lw", Codegen.FP, Codegen.SP, 8+sizeParams);
         //push space for local vars
         //SP = SP - sizeof(locals)
+        int sizeLocals = ((FnSym)(myId.sym())).getLocalsSize();
+        Codegen.generateIndexed("lw", Codegen.SP, Codegen.SP, -sizeLocals);
+        //Body
+        myBody.codegen();
+        //Epilogue
+        //load ret addr
+        Codegen.generateIndexed("lw", Codegen.RA, Codegen.FP, -sizeParams);
+        //save curr FP
+        //move T0, FP
+        Codegen.generate("move", Codegen.T0, Codegen.FP);
+        //restore old FP
+        //lw FP, -sizeParams-4(FP)
+        Codegen.generateIndexed("lw", Codegen.FP, Codegen.FP, -sizeParams-4);
+        //restore old SP
+        //move SP, T0
+        Codegen.generate("move", Codegen.SP, Codegen.T0);
+        //return
+        //jr RA
+        Codegen.generate("jr", Codegen.RA);
     }
 
     /**
