@@ -2506,24 +2506,9 @@ class MinusNode extends ArithmeticExpNode {
 class TimesNode extends ArithmeticExpNode {
     public TimesNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
+        myOp = "mulo";
     }
 
-    /**
-     * Generate MIPS code for this node
-     */
-    public void codegen() {
-      // Do mostly the same as binexp node
-      myExp1.codegen();
-      myExp2.codegen();
-      Codegen.genPop("$t1");
-      Codegen.genPop("$t0");
-      Codegen.generate("mult", "$t0","$t1");
-      
-      // Mult's a little weird, so move value from LO & push
-      Codegen.generate("mflo","$t0");
-      Codegen.genPush("$t0");
-    }
-    
     public void unparse(PrintWriter p, int indent) {
         p.print("(");
         myExp1.unparse(p, 0);
@@ -2536,22 +2521,7 @@ class TimesNode extends ArithmeticExpNode {
 class DivideNode extends ArithmeticExpNode {
     public DivideNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
-    }
-
-    /**
-     * Generate MIPS code for this node
-     */
-    public void codegen() {
-      // Do mostly the same as binexp node
-      myExp1.codegen();
-      myExp2.codegen();
-      Codegen.genPop("$t1");
-      Codegen.genPop("$t0");
-      Codegen.generate("div", "$t0","$t1");
-      
-      // Div's a little weird, so move value from LO & push
-      Codegen.generate("mflo","$t0");
-      Codegen.genPush("$t0");
+        myOp = "div";
     }
 
     public void unparse(PrintWriter p, int indent) {
