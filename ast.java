@@ -276,7 +276,11 @@ class FnBodyNode extends ASTnode {
     public void nameAnalysis(SymTable symTab) {
         myDeclList.nameAnalysis(symTab);
         myStmtList.nameAnalysis(symTab);
-    }    
+    } 
+
+    public int numDecls(){
+        return myDeclList.size();
+    }   
  
     /**
      * typeCheck
@@ -566,6 +570,7 @@ class FnDeclNode extends DeclNode {
         
         else { // add function name to local symbol table
             try {
+                //when declaring FnSym, formals size is set in constructor
                 sym = new FnSym(myType.type(), myFormalsList.length());
                 symTab.addDecl(name, sym);
                 myId.link(sym);
@@ -589,6 +594,8 @@ class FnDeclNode extends DeclNode {
         }
         
         myBody.nameAnalysis(symTab); // process the function body
+        //set locals size
+        sym.setLocalsSize((myBody.numDecls())*4);
         
         try {
             symTab.removeScope();  // exit scope
