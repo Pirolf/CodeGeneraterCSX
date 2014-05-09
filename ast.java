@@ -2388,6 +2388,33 @@ abstract class EqualityExpNode extends BinaryExpNode {
     }
     
     /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      System.out.println("EqualityExpNode's codegen called");
+      // Get true & done labels
+      String tLbl = Codegen.nextLabel();
+      String dLbl = Codegen.nextLabel();
+
+      // Eval both exp's and pop them from stack
+      myExp1.codegen();
+      myExp2.codegen();
+      Codegen.genPop("$t1");
+      Codegen.genPop("$t0");
+
+      // Jump to tlbl on myOp true & put 1 in t0, otherwise put 0 & jump to done
+      Codegen.generate(myOp,"$t0","$t1",tLbl);
+      Codegen.generate("li","$t0",0);
+      Codegen.generate("b", dLbl);
+      Codegen.genLabel(tLbl);
+
+      // myOp is true, so put 1 in $t0
+      Codegen.generate("li","$t0",1);
+      Codegen.genLabel(dLbl);
+      Codegen.genPush("$t0");
+    }
+
+    /**
      * typeCheck
      */
     public Type typeCheck() {
@@ -2587,33 +2614,9 @@ class OrNode extends LogicalExpNode {
 class EqualsNode extends EqualityExpNode {
     public EqualsNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
+        myOp = "beq";
     }
-    /**
-     * Generate MIPS code for this node
-     */
-    public void codegen() {
-      System.out.println("EqualsNode's codegen called");
-      // Get equals & done labels
-      String eLbl = Codegen.nextLabel();
-      String dLbl = Codegen.nextLabel();
-      
-      // Eval both exp's and pop them from stack
-      myExp1.codegen();
-      myExp2.codegen();
-      Codegen.genPop("$t1");
-      Codegen.genPop("$t0");
-      
-      // Jump to eqlbl on equals & put 1 in t0, otherwise put 0 & jump to done
-      Codegen.generate("beq","$t0","$t1",eLbl);
-      Codegen.generate("li","$t0",0);
-      Codegen.generate("b", dLbl);
-      Codegen.genLabel(eLbl);
-      
-      // Equals, so put 1 in $t0
-      Codegen.generate("li","$t0",1);
-      Codegen.genLabel(dLbl);
-      Codegen.genPush("$t0");
-    }
+
     public void unparse(PrintWriter p, int indent) {
         p.print("(");
         myExp1.unparse(p, 0);
@@ -2626,34 +2629,9 @@ class EqualsNode extends EqualityExpNode {
 class NotEqualsNode extends EqualityExpNode {
     public NotEqualsNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
+        myOp = "bne";
     }
     
-    /**
-     * Generate MIPS code for this node
-     */
-    public void codegen() {
-      System.out.println("NotEqualsNode's codegen called");
-      // Get equals & done labels
-      String eLbl = Codegen.nextLabel();
-      String dLbl = Codegen.nextLabel();
-      
-      // Eval both exp's and pop them from stack
-      myExp1.codegen();
-      myExp2.codegen();
-      Codegen.genPop("$t1");
-      Codegen.genPop("$t0");
-      
-      // Jump to eqlbl on equals & put 0 in t0, otherwise put 1 & jump to done
-      Codegen.generate("beq","$t0","$t1",eLbl);
-      Codegen.generate("li","$t0",1);
-      Codegen.generate("b", dLbl);
-      Codegen.genLabel(eLbl);
-      
-      // Equals, so put 0 in $t0
-      Codegen.generate("li","$t0",0);
-      Codegen.genLabel(dLbl);
-      Codegen.genPush("$t0");
-    }
     public void unparse(PrintWriter p, int indent) {
         p.print("(");
         myExp1.unparse(p, 0);
