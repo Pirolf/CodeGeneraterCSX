@@ -1002,6 +1002,11 @@ class ReadStmtNode extends StmtNode {
 }
 
 class WriteStmtNode extends StmtNode {
+    //type of exp being written
+    private Type writeType;
+    public Type getWriteType(){
+        return writeType;
+    }
     public WriteStmtNode(ExpNode exp) {
         myExp = exp;
     }
@@ -1019,7 +1024,7 @@ class WriteStmtNode extends StmtNode {
      */
     public void typeCheck(Type retType) {
         Type type = myExp.typeCheck();
-        
+        this.writeType = type;
         if (type.isFnType()) {
             ErrMsg.fatal(myExp.lineNum(), myExp.charNum(),
                          "Attempt to write a function");
