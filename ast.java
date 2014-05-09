@@ -2334,6 +2334,27 @@ abstract class LogicalExpNode extends BinaryExpNode {
     }
     
     /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      // Get done label
+      String dLbl = Codegen.nextLabel();
+
+      // Evaluate left expression, on myOp, it's done
+      myExp1.codegen();
+      Codegen.genPop("$t0");
+      Codegen.generate("beq","$t0",myOp,dLbl);
+
+      // Code for $t0 didn't eval to myOp (whole exp evaluates to rh exp)
+      myExp2.codegen();
+      Codegen.genPop("$t0");
+
+      // Make done lbl and push $t0 as the result
+      Codegen.genLabel(dLbl);
+      Codegen.genPush("$t0");
+    }
+
+    /**
      * typeCheck
      */
     public Type typeCheck() {
@@ -2536,29 +2557,9 @@ class DivideNode extends ArithmeticExpNode {
 class AndNode extends LogicalExpNode {
     public AndNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
+        myOp = "0";
     }
 
-    /**
-     * Generate MIPS code for this node
-     */
-    public void codegen() {
-      // Get done label
-      String dLbl = Codegen.nextLabel();
-      
-      // Evaluate left expression, on zero, it's done
-      myExp1.codegen();
-      Codegen.genPop("$t0");
-      Codegen.generate("beq","$t0","0",dLbl);
-      
-      // Code for $t0 evaluated to 1 (whole exp evaluates to rh exp)
-      myExp2.codegen();
-      Codegen.genPop("$t0");
-      
-      // Make done lbl and push $t0 as the result
-      Codegen.genLabel(dLbl);
-      Codegen.genPush("$t0");
-    }
-    
     public void unparse(PrintWriter p, int indent) {
         p.print("(");
         myExp1.unparse(p, 0);
@@ -2571,28 +2572,9 @@ class AndNode extends LogicalExpNode {
 class OrNode extends LogicalExpNode {
     public OrNode(ExpNode exp1, ExpNode exp2) {
         super(exp1, exp2);
-        myOp = "or";
+        myOp = "1";
     }
-    /**
-     * Generate MIPS code for this node
-     */
-    public void codegen() {
-      // Get done label
-      String dLbl = Codegen.nextLabel();
 
-      // Evaluate left expression, on one, it's done
-      myExp1.codegen();
-      Codegen.genPop("$t0");
-      Codegen.generate("beq","$t0","1",dLbl);
-
-      // Code for $t0 evaluated to 0 (whole exp evaluates to rh exp)
-      myExp2.codegen();
-      Codegen.genPop("$t0");
-
-      // Make done lbl and push $t0 as the result
-      Codegen.genLabel(dLbl);
-      Codegen.genPush("$t0");
-    }
     public void unparse(PrintWriter p, int indent) {
         p.print("(");
         myExp1.unparse(p, 0);
