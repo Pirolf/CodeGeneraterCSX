@@ -693,7 +693,7 @@ class FnDeclNode extends DeclNode {
     public void typeCheck() {
         myBody.typeCheck(myType.type());
     }
-     
+        
     public void unparse(PrintWriter p, int indent) {
         doIndent(p, indent);
         myType.unparse(p, 0);
@@ -1111,10 +1111,6 @@ class WriteStmtNode extends StmtNode {
       Codegen.generate("syscall");
     }
 
-    // string writing helper
-    private void strgen() {
-      
-    }
     /**
      * nameAnalysis
      * Given a symbol table symTab, perform name analysis on this node's child
