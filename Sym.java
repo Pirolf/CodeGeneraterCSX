@@ -6,17 +6,24 @@ import java.util.*;
  */
 public class Sym {
     private Type type;
-    
+    private int offset;
     public Sym(Type type) {
         this.type = type;
     }
-    
     public Type getType() {
         return type;
     }
     
     public String toString() {
         return type.toString();
+    }
+
+    public int getOffset(){
+        return offset;
+    }
+
+    public int setOffset(int newOffset){
+        this.offset = newOffset;
     }
 }
 
@@ -30,13 +37,24 @@ class FnSym extends Sym {
     private Type returnType;
     private int numParams;
     private List<Type> paramTypes;
+    private int paramsSize;
+    private int localsSize;
     
     public FnSym(Type type, int numparams) {
         super(new FnType());
         returnType = type;
         numParams = numparams;
+        paramsSize = numparams*4;
     }
-
+    public int getParamsSize(){
+        return paramsSize;
+    }
+    public int getLocalsSize(){
+        return localsSize;
+    }
+    public void setLocalsSize(int ls){
+        this.localsSize = ls;
+    }
     public void addFormals(List<Type> L) {
         paramTypes = L;
     }
