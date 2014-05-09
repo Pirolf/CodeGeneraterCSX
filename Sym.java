@@ -22,7 +22,7 @@ public class Sym {
         return offset;
     }
 
-    public int setOffset(int newOffset){
+    public void setOffset(int newOffset){
         this.offset = newOffset;
     }
 }

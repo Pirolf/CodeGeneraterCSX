@@ -155,7 +155,6 @@ class DeclListNode extends ASTnode {
     public DeclListNode(List<DeclNode> S) {
         myDecls = S;
     }
-
     /**
      * nameAnalysis
      * Given a symbol table symTab, process all of the decls in the list.
@@ -187,7 +186,7 @@ class DeclListNode extends ASTnode {
         boolean hasMain = false;
         for (DeclNode node : myDecls) {
             if(node instanceof FnDeclNode){
-                String functionName = (FnDeclNode).fnName();
+                String functionName = ((FnDeclNode)node).fnName();
                 if(functionName.equals("main")){
                     hasMain = true;
                 }
@@ -210,7 +209,12 @@ class DeclListNode extends ASTnode {
             System.exit(-1);
         }
     }
-
+    public int getDeclListSize(){
+        if(myDecls != null){
+           return myDecls.size(); 
+        }
+        return 0; 
+    }
     // list of kids (DeclNodes)
     private List<DeclNode> myDecls;
 }
@@ -266,6 +270,9 @@ class FnBodyNode extends ASTnode {
         myDeclList = declList;
         myStmtList = stmtList;
     }
+    public void codegen(){
+        //TODO
+    }
 
     /**
      * nameAnalysis
@@ -279,7 +286,7 @@ class FnBodyNode extends ASTnode {
     } 
 
     public int numDecls(){
-        return myDeclList.size();
+        return myDeclList.getDeclListSize();
     }   
  
     /**
@@ -534,7 +541,7 @@ class FnDeclNode extends DeclNode {
         }
         //Prologue
         //push ret addr
-        Codegen.genPush(Codegn.RA);
+        Codegen.genPush(Codegen.RA);
         //push ctrl link
         Codegen.genPush(Codegen.FP);
         //set new FP
