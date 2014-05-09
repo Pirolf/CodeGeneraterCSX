@@ -39,12 +39,26 @@ class FnSym extends Sym {
     private List<Type> paramTypes;
     private int paramsSize;
     private int localsSize;
-    
+    private String myEntry;
+    private String myExit;
+
     public FnSym(Type type, int numparams) {
         super(new FnType());
         returnType = type;
         numParams = numparams;
         paramsSize = numparams*4;
+    }
+    public String entry() {
+      return myEntry;
+    }
+    public String exit() {
+      return myExit;
+    }
+    public void setEntry(String lbl) {
+      myEntry = lbl;
+    }
+    public void setExit(String lbl) {
+      myExit = lbl;
     }
     public int getParamsSize(){
         return paramsSize;

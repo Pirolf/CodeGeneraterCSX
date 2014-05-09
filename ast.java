@@ -130,7 +130,7 @@ class ProgramNode extends ASTnode {
      */
     public void codegen() {
       // Call myDeclList's Code Gen
-      System.out.println("Program Node's genCode called.");
+      System.out.println("Program Node's codegen called");
       myDeclList.codegen();
     }
 
@@ -170,7 +170,7 @@ class DeclListNode extends ASTnode {
      * Generates MIPS Code for node
      */
     public void codegen() {
-      System.out.println("DeclListNode's genCode called");
+      System.out.println("DeclListNode's codegen called");
       for (DeclNode n : myDecls)
          n.codegen();
     }
@@ -338,6 +338,7 @@ class StmtListNode extends ASTnode {
      * Generate MIPS code for this node
      */
     public void codegen(String eLbl) {
+      System.out.println("StmtListNode's codegen called");
       for (StmtNode n : myStmts)
          n.codegen(eLbl);
     }
@@ -376,6 +377,14 @@ class ExpListNode extends ASTnode {
         myExps = S;
     }
     
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      // Push evaluations of all exps in myExps onto stack
+      for (ExpNode n : myExps)
+         n.codegen();
+    }
     public int size() {
         return myExps.size();
     }
@@ -572,14 +581,17 @@ class FnDeclNode extends DeclNode {
         int sizeLocals = ((FnSym)(myId.sym())).getLocalsSize();
         // Exit label, may want to change later to ensure uniqueness
         String eLbl = "_" + myId.name() + "_Exit";
+        ((FnSym)myId.sym()).setExit(eLbl);
         
         Codegen.generate(".text");
         //Preamble
         if (isMain) {
          Codegen.generate(".globl main");
+         ((FnSym)myId.sym()).setEntry(myId.name());
          Codegen.genLabel(myId.name(), "METHOD ENTRY");
          Codegen.genLabel("__start", "add __start label for main only");
         } else {
+         ((FnSym)myId.sym()).setEntry("_" + myId.name());
          Codegen.genLabel("_" + myId.name(), "METHOD ENTRY");
         }
 
@@ -926,7 +938,9 @@ abstract class StmtNode extends ASTnode {
     abstract public void nameAnalysis(SymTable symTab);
     abstract public void typeCheck(Type retType);
     // default codegen for StmtNode
-    public void codegen(String eLbl) { }
+    public void codegen(String eLbl) {
+      System.out.println("StmtNode's codegen called");
+    }
 }
 
 class AssignStmtNode extends StmtNode {
@@ -1344,6 +1358,7 @@ class WhileStmtNode extends StmtNode {
         myDeclList = dlist;
         myStmtList = slist;
     }
+
     /**
      * Generate MIPS code for this node
      */
@@ -1352,7 +1367,7 @@ class WhileStmtNode extends StmtNode {
       String cLbl = Codegen.nextLabel();
       String dLbl = Codegen.nextLabel();
 
-      // gen eval label first (will need to reevaluate exp each loop iteration)
+      // gen clabel first (will need to reevaluate exp each loop iteration)
       Codegen.genLabel(cLbl, "while condition");
       myExp.codegen();
       Codegen.genPop("$t0");
@@ -1363,6 +1378,7 @@ class WhileStmtNode extends StmtNode {
       Codegen.generate("b",cLbl);
       Codegen.genLabel(dLbl, "end while");
     }
+
     /**
      * nameAnalysis
      * Given a symbol table symTab, do:
@@ -1420,6 +1436,16 @@ class CallStmtNode extends StmtNode {
     public CallStmtNode(CallExpNode call) {
         myCall = call;
     }
+
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen(String eLbl) {
+      System.out.println("CallStmtNode's codegen called");
+      // Generate code for mycall, pop junk data to restore stack
+      myCall.codegen();
+      Codegen.genPop("$t0");
+    }
     
     /**
      * nameAnalysis
@@ -1451,6 +1477,18 @@ class ReturnStmtNode extends StmtNode {
         myExp = exp;
     }
     
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen(String eLbl) {
+      // Put return value into $v0
+      if (myExp != null) {
+         myExp.codegen();
+         Codegen.genPop("$v0");
+      }
+      // Exit function unconditionally
+      Codegen.generate("b",eLbl);
+    }
     /**
      * nameAnalysis
      * Given a symbol table symTab, perform name analysis on this node's child,
@@ -1721,6 +1759,13 @@ class IdNode extends ExpNode {
         myLineNum = lineNum;
         myCharNum = charNum;
         myStrVal = strVal;
+    }
+    /**
+     * Generate a jump and link for this id node
+     */
+    public void genJAL() {
+      String ent = ((FnSym)mySym).entry();
+      Codegen.generate("jal", ent);
     }
     /**
      * Generate MIPS code for this node
@@ -2036,7 +2081,19 @@ class CallExpNode extends ExpNode {
         myId = name;
         myExpList = elist;
     }
-
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      // Push parameters onto stack
+      myExpList.codegen();
+      // Generate jump & link from id node
+      myId.genJAL();
+      // Push contents of $v0 onto stack (in case of void, just pushes junk
+      // data, it's okay since we'll pop it later & it can't be used in an
+      // expression evaluation)
+      Codegen.genPush("$v0");
+    }
     public CallExpNode(IdNode name) {
         myId = name;
         myExpList = new ExpListNode(new LinkedList<ExpNode>());
