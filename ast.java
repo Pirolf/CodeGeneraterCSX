@@ -293,8 +293,8 @@ class FnBodyNode extends ASTnode {
     /**
      * Generate MIPS code for this node
      */
-    public void codegen(){
-      myStmtList.codegen();
+    public void codegen(String eLbl){
+      myStmtList.codegen(eLbl);
     }
 
     /**
@@ -337,9 +337,9 @@ class StmtListNode extends ASTnode {
     /**
      * Generate MIPS code for this node
      */
-    public void codegen() {
+    public void codegen(String eLbl) {
       for (StmtNode n : myStmts)
-         n.codegen();
+         n.codegen(eLbl);
     }
     /**
      * nameAnalysis
@@ -570,7 +570,9 @@ class FnDeclNode extends DeclNode {
         boolean isMain = myId.name().equals("main");
         int sizeParams = ((FnSym)(myId.sym())).getParamsSize();
         int sizeLocals = ((FnSym)(myId.sym())).getLocalsSize();
-
+        // Exit label, may want to change later to ensure uniqueness
+        String eLbl = "_" + myId.name() + "_Exit";
+        
         Codegen.generate(".text");
         //Preamble
         if (isMain) {
@@ -591,11 +593,11 @@ class FnDeclNode extends DeclNode {
          Codegen.generateIndexed("lw", "$sp", "$sp", -sizeLocals);
         
         //Body
-        myBody.codegen();
+        myBody.codegen(eLbl);
         
         //Epilogue
         // generate fn exit label
-        Codegen.genLabel("_" + myId.name() + "_Exit", "FUNCTION EXIT");
+        Codegen.genLabel(eLbl, "FUNCTION EXIT");
         //load ret addr
         Codegen.generateIndexed("lw", "$ra", "$fp", -sizeParams);
         //save curr FP
@@ -924,7 +926,7 @@ abstract class StmtNode extends ASTnode {
     abstract public void nameAnalysis(SymTable symTab);
     abstract public void typeCheck(Type retType);
     // default codegen for StmtNode
-    public void codegen() { }
+    public void codegen(String eLbl) { }
 }
 
 class AssignStmtNode extends StmtNode {
@@ -1085,7 +1087,7 @@ class WriteStmtNode extends StmtNode {
     /**
      * Generate MIPS code for this node
      */
-    public void codegen() {
+    public void codegen(String eLbl) {
       myExp.codegen();
       Codegen.genPop("$a0");
 
@@ -1157,7 +1159,7 @@ class IfStmtNode extends StmtNode {
     /**
      * Generates MIPS code for this node
      */
-    public void codegen() {
+    public void codegen(String eLbl) {
       System.out.println("IfStmtNode's codegen called");
       // no need to gen code for decllist, get false label
       String fLbl = Codegen.nextLabel();
@@ -1167,7 +1169,7 @@ class IfStmtNode extends StmtNode {
       // branch on exp evals to false (numeric approach!)
       Codegen.generate("beq","$t0","0",fLbl);
       // generate body's code & false label
-      myStmtList.codegen();
+      myStmtList.codegen(eLbl);
       Codegen.genLabel(fLbl, "endif");
     }
 
@@ -1238,7 +1240,7 @@ class IfElseStmtNode extends StmtNode {
     /**
      * Generate MIPS code for this node
      */
-    public void codegen() {
+    public void codegen(String eLbl) {
       System.out.println("IfElseStmtNode's codegen called");
       // get false & done labels
       String fLbl = Codegen.nextLabel();
@@ -1252,12 +1254,12 @@ class IfElseStmtNode extends StmtNode {
       Codegen.generate("beq","$t0","0",fLbl);
       
       // generate true body's code & unconditional br to done label
-      myThenStmtList.codegen();
+      myThenStmtList.codegen(eLbl);
       Codegen.generate("b",dLbl);
       
       // generate false label, false body's code & done label
       Codegen.genLabel(fLbl, "else block");
-      myElseStmtList.codegen();
+      myElseStmtList.codegen(eLbl);
       Codegen.genLabel(dLbl, "end if-else");
     }
 
@@ -1345,20 +1347,20 @@ class WhileStmtNode extends StmtNode {
     /**
      * Generate MIPS code for this node
      */
-    public void codegen() {
-      // get eval & done labels
-      String eLbl = Codegen.nextLabel();
+    public void codegen(String eLbl) {
+      // get condition & done labels
+      String cLbl = Codegen.nextLabel();
       String dLbl = Codegen.nextLabel();
 
       // gen eval label first (will need to reevaluate exp each loop iteration)
-      Codegen.genLabel(eLbl, "while condition");
+      Codegen.genLabel(cLbl, "while condition");
       myExp.codegen();
       Codegen.genPop("$t0");
       Codegen.generate("beq","$t0","0",dLbl);
 
       // generate body's code, unconditional br back to elbl & gen dLbl
-      myStmtList.codegen();
-      Codegen.generate("b",eLbl);
+      myStmtList.codegen(eLbl);
+      Codegen.generate("b",cLbl);
       Codegen.genLabel(dLbl, "end while");
     }
     /**
