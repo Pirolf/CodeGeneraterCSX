@@ -113,6 +113,10 @@ abstract class ASTnode {
     protected void doIndent(PrintWriter p, int indent) {
         for (int k=0; k<indent; k++) p.print(" ");
     }
+    
+    // true if our program contains a method named "main"
+    public static boolean hasMain;
+
 }
 
 // **********************************************************************
@@ -124,6 +128,16 @@ class ProgramNode extends ASTnode {
     public ProgramNode(DeclListNode L) {
         myDeclList = L;
     }
+    
+    /**
+     * Generates MIPS Code for node
+     */
+    public void codegen() {
+      // Call myDeclList's Code Gen
+      System.out.println("Program Node's genCode called.");
+      myDeclList.codegen();
+    }
+
 
     /**
      * nameAnalysis
@@ -131,8 +145,11 @@ class ProgramNode extends ASTnode {
      * all of the globals, struct defintions, and functions in the program.
      */
     public void nameAnalysis() {
+        ASTnode.hasMain = false;
         SymTable symTab = new SymTable();
         myDeclList.nameAnalysis(symTab);
+        if (!ASTnode.hasMain)
+            ErrMsg.fatal(0,0,"No main function");
     }
     
     /**
@@ -155,6 +172,16 @@ class DeclListNode extends ASTnode {
     public DeclListNode(List<DeclNode> S) {
         myDecls = S;
     }
+    
+    /**
+     * Generates MIPS Code for node
+     */
+    public void codegen() {
+      System.out.println("DeclListNode's genCode called");
+      for (DeclNode n : myDecls)
+         n.codegen();
+    }
+
     /**
      * nameAnalysis
      * Given a symbol table symTab, process all of the decls in the list.
@@ -411,6 +438,8 @@ abstract class DeclNode extends ASTnode {
 
     // default version of typeCheck for non-function decls
     public void typeCheck() { }
+    // default version of codegen
+    public void codegen() { }
 }
 
 class VarDeclNode extends DeclNode {
@@ -529,47 +558,56 @@ class FnDeclNode extends DeclNode {
         myFormalsList = formalList;
         myBody = body;
     }
-    public void codegen(PrintWriter p){
-        p.println(" .text");
-        //Preamble
-        if(myId.name().equals("main")){
-            p.println(" .globl main");
-            p.println("main:");
-            p.println("__start");
-        }else{
-            p.println("_fctnName:");
-        }
-        //Prologue
-        //push ret addr
-        Codegen.genPush(Codegen.RA);
-        //push ctrl link
-        Codegen.genPush(Codegen.FP);
-        //set new FP
-        //FP = SP + 8 + sizeof(params)
-        //lw $FP, paramSize + 8($SP)
+    
+    public void codegen(){
+        // Generate special code for main function, get param & local sizes
+        boolean isMain = myId.name().equals("main");
         int sizeParams = ((FnSym)(myId.sym())).getParamsSize();
-        Codegen.generateIndexed("lw", Codegen.FP, Codegen.SP, 8+sizeParams);
-        //push space for local vars
-        //SP = SP - sizeof(locals)
         int sizeLocals = ((FnSym)(myId.sym())).getLocalsSize();
-        Codegen.generateIndexed("lw", Codegen.SP, Codegen.SP, -sizeLocals);
+
+        Codegen.generate(" .text");
+        //Preamble
+        if (isMain) {
+         Codegen.generate(".globl main");
+         Codegen.genLabel(myId.name(), "METHOD ENTRY");
+         Codegen.genLabel("__start", "add __start label for main only");
+        } else {
+         Codegen.genLabel("_" + myId.name(), "METHOD ENTRY");
+        }
+
+        //Prologue
+        Codegen.genPush("$ra"); //push ret addr
+        Codegen.genPush("$fp"); //push ctrl link
+        //set new FP
+        Codegen.generate("addu", "$fp", "$sp", 8+sizeParams);
+        //push space for local vars, if we have them... 
+        if (sizeLocals != 0)
+         Codegen.generateIndexed("lw", "$sp", "$sp", -sizeLocals);
+        
         //Body
         myBody.codegen();
+        
         //Epilogue
+        // generate fn exit label
+        Codegen.genLabel("_" + myId.name() + "_Exit", "FUNCTION EXIT");
         //load ret addr
-        Codegen.generateIndexed("lw", Codegen.RA, Codegen.FP, -sizeParams);
+        Codegen.generateIndexed("lw", "$ra", "$fp", -sizeParams);
         //save curr FP
-        //move T0, FP
-        Codegen.generate("move", Codegen.T0, Codegen.FP);
+        Codegen.generate("move","$t0","$fp");
         //restore old FP
-        //lw FP, -sizeParams-4(FP)
-        Codegen.generateIndexed("lw", Codegen.FP, Codegen.FP, -sizeParams-4);
+        Codegen.generateIndexed("lw", "$fp", "$fp", -sizeParams-4);
         //restore old SP
-        //move SP, T0
-        Codegen.generate("move", Codegen.SP, Codegen.T0);
+        Codegen.generate("move", "$sp", "$t0");
+        
         //return
-        //jr RA
-        Codegen.generate("jr", Codegen.RA);
+        if (isMain) {
+         // Exit program
+         Codegen.generate("li","$v0",10);
+         Codegen.generate("syscall");
+        } else {
+         // Exit function
+         Codegen.generate("jr", "$ra");
+        }
     }
 
     /**
@@ -588,7 +626,9 @@ class FnDeclNode extends DeclNode {
     public Sym nameAnalysis(SymTable symTab) {
         String name = myId.name();
         FnSym sym = null;
-        
+        // Our program DOES have a main function
+        if (name.equals("main"))
+            ASTnode.hasMain = true;
         if (symTab.lookupLocal(name) != null) {
             ErrMsg.fatal(myId.lineNum(), myId.charNum(),
                          "Multiply declared identifier");
