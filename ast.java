@@ -2647,6 +2647,31 @@ class NotEqualsNode extends EqualityExpNode {
         super(exp1, exp2);
     }
     
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      System.out.println("NotEqualsNode's codegen called");
+      // Get equals & done labels
+      String eLbl = Codegen.nextLabel();
+      String dLbl = Codegen.nextLabel();
+
+      // Eval both exp's and pop them from stack
+      myExp1.codegen();
+      myExp2.codegen();
+      Codegen.genPop("$t1");
+      Codegen.genPop("$t0");
+
+      // Jump to eqlbl on equals & put 0 in t0, otherwise put 1 & jump to done
+      Codegen.generate("beq","$t0","$t1",eLbl);
+      Codegen.generate("li","$t0",1);
+      Codegen.generate("b", dLbl);
+      Codegen.genLabel(eLbl);
+      // Equals, so put 0 in $t0
+      Codegen.generate("li","$t0",0);
+      Codegen.genLabel(dLbl);
+      Codegen.genPush("$t0");
+    }
     public void unparse(PrintWriter p, int indent) {
         p.print("(");
         myExp1.unparse(p, 0);
