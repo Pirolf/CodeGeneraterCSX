@@ -538,10 +538,12 @@ class VarDeclNode extends DeclNode {
         
         return sym;
     }
-           //load ret addr
- 
+    /**
+     * Generate MIPS code for this node
+     */
     // Make sure this only gets called for glbl vars!
     public void codegen(){
+        myId.sym().setGlbl();
         Codegen.generate(" .data");
         Codegen.generate(" .align 2");
         Codegen.generateLabeled("_" + myId.name(), ".space "+myType.size(),"");
@@ -1047,7 +1049,23 @@ class ReadStmtNode extends StmtNode {
     public ReadStmtNode(ExpNode e) {
         myExp = e;
     }
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen(String eLbl) {
+      System.out.println("ReadStmtNode's codegen called");
+      IdNode id = (IdNode)myExp;
+      
+      // Perform syscall to get input value into $v0
+      Codegen.generate("li","$v0",5);
+      Codegen.generate("syscall");
 
+      // Store that into mem location of id
+      if (id.sym().isGlbl())
+         Codegen.generate("sw","$v0","_"+id.name());
+      else
+         Codegen.generateIndexed("sw","$v0","$fp",id.sym().getOffset());
+    }
     /**
      * nameAnalysis
      * Given a symbol table symTab, perform name analysis on this node's child
@@ -1102,6 +1120,7 @@ class WriteStmtNode extends StmtNode {
      * Generate MIPS code for this node
      */
     public void codegen(String eLbl) {
+      System.out.println("WriteStmtNode's codegen called");
       myExp.codegen();
       Codegen.genPop("$a0");
 
@@ -1764,14 +1783,36 @@ class IdNode extends ExpNode {
      * Generate a jump and link for this id node
      */
     public void genJAL() {
+      System.out.println("IdNode's genJAL called");
       String ent = ((FnSym)mySym).entry();
       Codegen.generate("jal", ent);
     }
     /**
+     * Generate address for this id node
+     */
+    public void genAddr() {
+      System.out.println("IdNode's genAddr called");
+      // Calculate address & push on stack
+      if (mySym.isGlbl()) {
+         Codegen.generate("la","$t0","_" + myStrVal);
+      } else {
+         Codegen.generateIndexed("la","$t0","$fp",mySym.getOffset());
+      }
+      Codegen.genPush("$t0");
+    }
+    
+    /**
      * Generate MIPS code for this node
      */
     public void codegen() {
-      // This one is a little tricky... do later!
+      System.out.println("IdNode's codegen called");
+      // Load data from this var's address & push value
+      if (mySym.isGlbl()) {
+         Codegen.generate("lw","$t0","_" + myStrVal);
+      } else {
+         Codegen.generateIndexed("lw","$t0","$fp",mySym.getOffset());
+      }
+      Codegen.genPush("$t0");
     }
     /**
      * Link the given symbol to this ID.
