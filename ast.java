@@ -1574,12 +1574,21 @@ class StringLitNode extends ExpNode {
      * Generate MIPS code for this node
      */
     public void codegen() {
-      // Get next unique label and push that address to the stack
-      Codegen.generate(".data");
-      String lbl = Codegen.nextLabel();
-      String str = ".asciiz " + myStrVal;
-      Codegen.generateLabeled(lbl,str,"");
-      Codegen.generate(".text");
+      // Check that lblmap exists, if not make new one
+      if (lblMap == null)
+         lblMap = new HashMap<String,String>();
+      
+      String lbl = lblMap.get(myStrVal);
+      if (lbl == null) {
+         // Get next unique label and put that in our hashmap
+         lbl = Codegen.nextLabel();
+         lblMap.put(myStrVal, lbl);
+         Codegen.generate(".data");
+         String str = ".asciiz " + myStrVal;
+         Codegen.generateLabeled(lbl,str,"");
+         Codegen.generate(".text");
+      }
+         
       Codegen.generate("la","$t0",lbl);
       Codegen.genPush("$t0");
     }
@@ -1612,6 +1621,7 @@ class StringLitNode extends ExpNode {
     private int myLineNum;
     private int myCharNum;
     private String myStrVal;
+    protected static HashMap<String,String> lblMap;
 }
 
 class TrueNode extends ExpNode {
