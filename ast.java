@@ -113,10 +113,6 @@ abstract class ASTnode {
     protected void doIndent(PrintWriter p, int indent) {
         for (int k=0; k<indent; k++) p.print(" ");
     }
-    
-    // true if our program contains a method named "main"
-    public static boolean hasMain;
-
 }
 
 // **********************************************************************
@@ -145,11 +141,8 @@ class ProgramNode extends ASTnode {
      * all of the globals, struct defintions, and functions in the program.
      */
     public void nameAnalysis() {
-        ASTnode.hasMain = false;
         SymTable symTab = new SymTable();
         myDeclList.nameAnalysis(symTab);
-        if (!ASTnode.hasMain)
-            ErrMsg.fatal(0,0,"No main function");
     }
     
     /**
@@ -639,9 +632,6 @@ class FnDeclNode extends DeclNode {
     public Sym nameAnalysis(SymTable symTab) {
         String name = myId.name();
         FnSym sym = null;
-        // Our program DOES have a main function
-        if (name.equals("main"))
-            ASTnode.hasMain = true;
         if (symTab.lookupLocal(name) != null) {
             ErrMsg.fatal(myId.lineNum(), myId.charNum(),
                          "Multiply declared identifier");
