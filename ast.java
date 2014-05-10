@@ -989,6 +989,23 @@ class PostIncStmtNode extends StmtNode {
     }
     
     /**
+     * Generate MIPS code for this node
+     */
+    public void codegen(String eLbl) {
+      System.out.println("PostIncStmt's codegen called");
+      // Evaluate myExp & add 1 (really, just get our id's value)
+      myExp.codegen();
+      Codegen.genPop("$t0");
+      Codegen.generate("add","$t0","$t0",1);
+
+      // Get offset from myExp and store
+      IdNode id = ((IdNode)myExp);
+      if (id.sym().isGlbl())
+         Codegen.generate("sw","$t0","_" + id.name());
+      else
+         Codegen.generateIndexed("sw","$t0","$fp",id.sym().getOffset());
+    }
+    /**
      * nameAnalysis
      * Given a symbol table symTab, perform name analysis on this node's child
      */
@@ -1023,6 +1040,23 @@ class PostDecStmtNode extends StmtNode {
         myExp = exp;
     }
 
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen(String eLbl) {
+      System.out.println("PostDecStmt's codegen called");
+      // Evaluate myExp & add -1 (really, just get our id's value)
+      myExp.codegen();
+      Codegen.genPop("$t0");
+      Codegen.generate("add","$t0","$t0",-1);
+
+      // Get offset from myExp and store
+      IdNode id = ((IdNode)myExp);
+      if (id.sym().isGlbl())
+         Codegen.generate("sw","$t0","_" + id.name());
+      else
+         Codegen.generateIndexed("sw","$t0","$fp",id.sym().getOffset());
+    }
     /**
      * nameAnalysis
      * Given a symbol table symTab, perform name analysis on this node's child
