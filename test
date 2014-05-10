@@ -1,3 +1,30 @@
-int main(){
-	return 1;
+bool done;
+int loopNum;
+
+void main() {
+   cout << "Please enter 1 to exit program, 0 to continue:\n";
+   cin >> done;
+   cout << "Please enter the loop number you wish to enter:\n";
+   cin >> loopNum;
+   while (!done) {
+      if (loopNum != 1 && loopNum != 2) {
+            cout << "Please enter the loop number you wish to enter:\n";
+            cin >> loopNum;
+      }
+
+      while (loopNum == 1) {
+         cout << "In loop 1, please enter the loop number you wish to enter:\n";
+         cin >> loopNum;
+      }
+      
+      while (loopNum == 2) {
+         cout << "In loop 2, please enter the loop number you wish to enter:\n";
+         cin >> loopNum;
+      }
+
+      if (loopNum != 1 && loopNum != 2) {
+         cout << "Invalid loop number, please enter 1 to exit program, 0 to continue:\n";
+         cin >> done;
+      }
+   }
 }
