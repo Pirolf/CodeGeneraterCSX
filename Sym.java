@@ -50,7 +50,6 @@ class FnSym extends Sym {
     private int numParams;
     private List<Type> paramTypes;
     private int paramsSize;
-    private int localsSize;
     private String myEntry;
     private String myExit;
 
@@ -74,12 +73,6 @@ class FnSym extends Sym {
     }
     public int getParamsSize(){
         return paramsSize;
-    }
-    public int getLocalsSize(){
-        return localsSize;
-    }
-    public void setLocalsSize(int ls){
-        this.localsSize = ls;
     }
     public void addFormals(List<Type> L) {
         paramTypes = L;

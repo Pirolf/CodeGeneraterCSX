@@ -720,8 +720,6 @@ class FnDeclNode extends DeclNode {
         }
         
         myBody.nameAnalysis(symTab); // process the function body
-        //set locals size
-        sym.setLocalsSize((myBody.numDecls())*4);
         
         try {
             symTab.removeScope();  // exit scope
