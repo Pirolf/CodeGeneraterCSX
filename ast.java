@@ -174,6 +174,16 @@ class DeclListNode extends ASTnode {
       for (DeclNode n : myDecls)
          n.codegen();
     }
+    /**
+     * Set offsets for each var, starting at curr, return size
+     */
+    public int setOffsets(int curr) {
+      // Only will get called from fnbody or stmt nodes, safe to assume vardecl
+      for (DeclNode n : myDecls) {
+            curr = ((VarDeclNode)n).setOffset(curr);
+      }
+      return curr;
+    }
 
     /**
      * nameAnalysis
@@ -309,7 +319,15 @@ class FnBodyNode extends ASTnode {
     public void nameAnalysis(SymTable symTab) {
         myDeclList.nameAnalysis(symTab);
         myStmtList.nameAnalysis(symTab);
-    } 
+        // Set offsets for all the variables in decllist & stmt list
+        locSize = myStmtList.setOffsets(myDeclList.setOffsets(8));
+        // Don't count ret addr & ctrlLink for size
+        locSize -= 8; 
+    }
+
+    public int locSize() {
+      return locSize;
+    }
 
     public int numDecls(){
         return myDeclList.getDeclListSize();
@@ -330,13 +348,25 @@ class FnBodyNode extends ASTnode {
     // 2 kids
     private DeclListNode myDeclList;
     private StmtListNode myStmtList;
+    private int locSize;
 }
 
 class StmtListNode extends ASTnode {
     public StmtListNode(List<StmtNode> S) {
         myStmts = S;
     }
-    
+
+    /**
+     * Set offsets for each var, starting at curr, return size
+     */
+    public int setOffsets(int curr) {
+      // Call on each statement, will only be changed when decls are adde
+      for (StmtNode n : myStmts) {
+            curr = n.setOffsets(curr);
+      }
+      return curr;
+    }
+ 
     /**
      * Generate MIPS code for this node
      */
@@ -464,6 +494,14 @@ class VarDeclNode extends DeclNode {
         myId = id;
         mySize = size;
     }
+    
+    /**
+     * Set this node's symbol's offset
+     */
+    public int setOffset(int curr) {
+      myId.sym().setOffset(curr);
+      return curr + 4;
+    }
 
     /**
      * nameAnalysis (overloaded)
@@ -583,7 +621,7 @@ class FnDeclNode extends DeclNode {
         // Generate special code for main function, get param & local sizes
         boolean isMain = myId.name().equals("main");
         int sizeParams = ((FnSym)(myId.sym())).getParamsSize();
-        int sizeLocals = ((FnSym)(myId.sym())).getLocalsSize();
+        int sizeLocals = myBody.locSize();
         // Exit label, may want to change later to ensure uniqueness
         String eLbl = "_" + myId.name() + "_Exit";
         ((FnSym)myId.sym()).setExit(eLbl);
@@ -607,7 +645,7 @@ class FnDeclNode extends DeclNode {
         Codegen.generate("addu", "$fp", "$sp", 8+sizeParams);
         //push space for local vars, if we have them... 
         if (sizeLocals != 0)
-         Codegen.generateIndexed("lw", "$sp", "$sp", -sizeLocals);
+         Codegen.generateIndexed("subu", "$sp", "$sp", sizeLocals);
         
         //Body
         myBody.codegen(eLbl);
@@ -948,6 +986,10 @@ abstract class StmtNode extends ASTnode {
     public void codegen(String eLbl) {
       System.out.println("StmtNode's codegen called");
     }
+    // default setOffsets, don't change anything
+    public int setOffsets(int curr) {
+      return curr;
+    }
 }
 
 class AssignStmtNode extends StmtNode {
@@ -1235,7 +1277,13 @@ class IfStmtNode extends StmtNode {
         myExp = exp;
         myStmtList = slist;
     }
-    
+    /**
+     * call myDeclList's set offsets on curr
+     */
+    public int setOffsets(int curr) {
+      return myStmtList.setOffsets(myDeclList.setOffsets(curr));
+    }
+
     /**
      * Generates MIPS code for this node
      */
@@ -1316,7 +1364,13 @@ class IfElseStmtNode extends StmtNode {
         myElseDeclList = dlist2;
         myElseStmtList = slist2;
     }
-    
+    /**
+     * Set offsets for all Decl & stmt nodes
+     */
+    public int setOffsets (int curr) {
+      curr = myThenStmtList.setOffsets(myThenDeclList.setOffsets(curr));
+      return myElseStmtList.setOffsets(myElseDeclList.setOffsets(curr));
+    }
     /**
      * Generate MIPS code for this node
      */
@@ -1423,6 +1477,13 @@ class WhileStmtNode extends StmtNode {
         myExp = exp;
         myDeclList = dlist;
         myStmtList = slist;
+    }
+
+    /**
+     * call myDeclList's set offsets on curr
+     */
+    public int setOffsets(int curr) {
+      return myStmtList.setOffsets(myDeclList.setOffsets(curr));
     }
 
     /**
@@ -2105,7 +2166,7 @@ class AssignNode extends ExpNode {
          Codegen.generate("sw","$t0","_" + id.name());
       else
          Codegen.generateIndexed("sw","$t0","$fp",id.sym().getOffset());
-
+      
       // Push value onto stack
       Codegen.genPush("$t0");
     }
