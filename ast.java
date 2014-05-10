@@ -254,8 +254,11 @@ class FormalsListNode extends ASTnode {
      */
     public List<Type> nameAnalysis(SymTable symTab) {
         List<Type> typeList = new LinkedList<Type>();
+        int offset = 0;
         for (FormalDeclNode node : myFormals) {
             Sym sym = node.nameAnalysis(symTab);
+            node.setOffset(offset);
+            offset -= 4;
             if (sym != null) {
                 typeList.add(sym.getType());
             }
@@ -726,7 +729,9 @@ class FormalDeclNode extends DeclNode {
         myType = type;
         myId = id;
     }
-
+    public void setOffset(int offset) {
+      myId.sym().setOffset(offset);
+    }
     /**
      * nameAnalysis
      * Given a symbol table symTab, do:
