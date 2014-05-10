@@ -949,7 +949,15 @@ class AssignStmtNode extends StmtNode {
     public AssignStmtNode(AssignNode assign) {
         myAssign = assign;
     }
-
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen(String eLbl) {
+      System.out.println("AssignStmtNode's codegen called");
+      // codegen on myAssign, pop junk data
+      myAssign.codegen();
+      Codegen.genPop("$t0");
+    }
     /**
      * nameAnalysis
      * Given a symbol table symTab, perform name analysis on this node's child
@@ -2042,7 +2050,26 @@ class AssignNode extends ExpNode {
         myLhs = lhs;
         myExp = exp;
     }
-    
+    /**
+     * Generate MIPS code for this node
+     */
+    public void codegen() {
+      System.out.println("AssignNode's codegen called");
+      
+      // Put myExp's value into $t0
+      myExp.codegen();
+      Codegen.genPop("$t0");
+      
+      // Get offset from lhs 
+      IdNode id = ((IdNode)myLhs);
+      if (id.sym().isGlbl()) 
+         Codegen.generate("sw","$t0","_" + id.name());
+      else
+         Codegen.generateIndexed("sw","$t0","$fp",id.sym().getOffset());
+
+      // Push value onto stack
+      Codegen.genPush("$t0");
+    }
     /**
      * Return the line number for this assignment node. 
      * The line number is the one corresponding to the left operand.
