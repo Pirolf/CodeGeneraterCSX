@@ -7,9 +7,21 @@ import java.util.*;
 public class Sym {
     private Type type;
     private int offset;
+    private boolean isGlbl;
+
     public Sym(Type type) {
         this.type = type;
+        isGlbl = false;
     }
+
+    public void setGlbl() {
+      isGlbl = true;
+    }
+
+    public boolean isGlbl () {
+      return isGlbl;
+    }
+    
     public Type getType() {
         return type;
     }
@@ -23,7 +35,7 @@ public class Sym {
     }
 
     public void setOffset(int newOffset){
-        this.offset = newOffset;
+        offset = newOffset;
     }
 }
 
