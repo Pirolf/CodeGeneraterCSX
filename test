@@ -32,7 +32,7 @@ int f1(){
    //test ++ --
    i1--;
    //test if else, while,  ==, >= <=, >, <
-   if(i1 == i2 == i3){
+   if(i1 == i2){
       while(i2 > i3){
          i3 ++;
       }
@@ -54,6 +54,9 @@ void main() {
    }
    if(f4(false, f2())){
       f5();
+      if("aaa" == "aaa"){
+         cout << "aaa";
+      }
    }
    cout << "Please enter 1 to exit program, 0 to continue:\n";
    cin >> done;
