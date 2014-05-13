@@ -644,8 +644,10 @@ class FnDeclNode extends DeclNode {
         //set new FP
         Codegen.generate("addu", "$fp", "$sp", 8+sizeParams);
         //push space for local vars, if we have them... 
-        if (sizeLocals != 0)
-         Codegen.generateIndexed("subu", "$sp", "$sp", sizeLocals);
+        if (sizeLocals != 0) {
+            //Codegen.generateIndexed("subu", "$sp", "$sp", sizeLocals);
+            Codegen.generate("subu", "$sp", "$sp", sizeLocals);
+        }
         
         //Body
         myBody.codegen(eLbl);
