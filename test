@@ -1,7 +1,60 @@
 bool done;
 int loopNum;
+int i1;
+int i2;
+int i3;
+int i4;
+void f5(){
+   return;
+}
+bool f4(bool b, int i){
+   b = !(i == 3) || (i > 4) && (i <= 0);
+   return b;
+}
+int f3(){
+   return 2;
+}
+int f2(int p1, int p2){
+   int j1;
+   i1 = 2;
+   j1 = 3;
+   return i1 * j1 + p1 - p2;
+}
+int f1(){
+   //test assignment
+   i1 = 1;
+   i2 = 2;
+   i3 = 3;
+   i4 = 4;
+   i2 = i1 = i3;
+   //test + - * /
+   i1 = (i1 + i2 * i3)/i4;
+   //test ++ --
+   i1--;
+   //test if else, while,  ==, >= <=, >, <
+   if(i1 == i2 == i3){
+      while(i2 > i3){
+         i3 ++;
+      }
+      //test return
+      return f2(i1, i2) * f2(1, 2);
+   }else{
+      if(i3 <= i4){
+         //test -unary
+         i4 = -i4;
+      }
+   }
+   return f2(i3, i4) + f3() + 1;
+}
 
 void main() {
+   if(f1() > 1){
+      bool b1;
+      b1 = f1() < 5;
+   }
+   if(f4(false, f2())){
+      f5();
+   }
    cout << "Please enter 1 to exit program, 0 to continue:\n";
    cin >> done;
    cout << "Please enter the loop number you wish to enter:\n";
