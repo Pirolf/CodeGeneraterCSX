@@ -130,7 +130,7 @@ class ProgramNode extends ASTnode {
      */
     public void codegen() {
       // Call myDeclList's Code Gen
-      System.out.println("Program Node's codegen called");
+      //System.out.println("Program Node's codegen called");
       myDeclList.codegen();
     }
 
@@ -170,7 +170,7 @@ class DeclListNode extends ASTnode {
      * Generates MIPS Code for node
      */
     public void codegen() {
-      System.out.println("DeclListNode's codegen called");
+      //System.out.println("DeclListNode's codegen called");
       for (DeclNode n : myDecls)
          n.codegen();
     }
@@ -371,7 +371,7 @@ class StmtListNode extends ASTnode {
      * Generate MIPS code for this node
      */
     public void codegen(String eLbl) {
-      System.out.println("StmtListNode's codegen called");
+      //System.out.println("StmtListNode's codegen called");
       for (StmtNode n : myStmts)
          n.codegen(eLbl);
     }
@@ -984,7 +984,7 @@ abstract class StmtNode extends ASTnode {
     abstract public void typeCheck(Type retType);
     // default codegen for StmtNode
     public void codegen(String eLbl) {
-      System.out.println("StmtNode's codegen called");
+     // System.out.println("StmtNode's codegen called");
     }
     // default setOffsets, don't change anything
     public int setOffsets(int curr) {
@@ -1000,7 +1000,7 @@ class AssignStmtNode extends StmtNode {
      * Generate MIPS code for this node
      */
     public void codegen(String eLbl) {
-      System.out.println("AssignStmtNode's codegen called");
+     // System.out.println("AssignStmtNode's codegen called");
       // codegen on myAssign, pop junk data
       myAssign.codegen();
       Codegen.genPop("$t0");
@@ -1039,7 +1039,7 @@ class PostIncStmtNode extends StmtNode {
      * Generate MIPS code for this node
      */
     public void codegen(String eLbl) {
-      System.out.println("PostIncStmt's codegen called");
+     // System.out.println("PostIncStmt's codegen called");
       // Evaluate myExp & add 1 (really, just get our id's value)
       myExp.codegen();
       Codegen.genPop("$t0");
@@ -1091,7 +1091,7 @@ class PostDecStmtNode extends StmtNode {
      * Generate MIPS code for this node
      */
     public void codegen(String eLbl) {
-      System.out.println("PostDecStmt's codegen called");
+     // System.out.println("PostDecStmt's codegen called");
       // Evaluate myExp & add -1 (really, just get our id's value)
       myExp.codegen();
       Codegen.genPop("$t0");
@@ -1142,7 +1142,7 @@ class ReadStmtNode extends StmtNode {
      * Generate MIPS code for this node
      */
     public void codegen(String eLbl) {
-      System.out.println("ReadStmtNode's codegen called");
+      //System.out.println("ReadStmtNode's codegen called");
       IdNode id = (IdNode)myExp;
       
       // Perform syscall to get input value into $v0
@@ -1209,7 +1209,7 @@ class WriteStmtNode extends StmtNode {
      * Generate MIPS code for this node
      */
     public void codegen(String eLbl) {
-      System.out.println("WriteStmtNode's codegen called");
+     // System.out.println("WriteStmtNode's codegen called");
       myExp.codegen();
       Codegen.genPop("$a0");
 
@@ -1288,7 +1288,7 @@ class IfStmtNode extends StmtNode {
      * Generates MIPS code for this node
      */
     public void codegen(String eLbl) {
-      System.out.println("IfStmtNode's codegen called");
+      //System.out.println("IfStmtNode's codegen called");
       // no need to gen code for decllist, get false label
       String fLbl = Codegen.nextLabel();
       // evaluate exp
@@ -1375,7 +1375,7 @@ class IfElseStmtNode extends StmtNode {
      * Generate MIPS code for this node
      */
     public void codegen(String eLbl) {
-      System.out.println("IfElseStmtNode's codegen called");
+      //System.out.println("IfElseStmtNode's codegen called");
       // get false & done labels
       String fLbl = Codegen.nextLabel();
       String dLbl = Codegen.nextLabel();
@@ -1568,7 +1568,7 @@ class CallStmtNode extends StmtNode {
      * Generate MIPS code for this node
      */
     public void codegen(String eLbl) {
-      System.out.println("CallStmtNode's codegen called");
+      //System.out.println("CallStmtNode's codegen called");
       // Generate code for mycall, pop junk data to restore stack
       myCall.codegen();
       Codegen.genPop("$t0");
@@ -1891,7 +1891,7 @@ class IdNode extends ExpNode {
      * Generate a jump and link for this id node
      */
     public void genJAL() {
-      System.out.println("IdNode's genJAL called");
+     // System.out.println("IdNode's genJAL called");
       String ent = ((FnSym)mySym).entry();
       Codegen.generate("jal", ent);
     }
@@ -1899,7 +1899,7 @@ class IdNode extends ExpNode {
      * Generate address for this id node
      */
     public void genAddr() {
-      System.out.println("IdNode's genAddr called");
+     // System.out.println("IdNode's genAddr called");
       // Calculate address & push on stack
       if (mySym.isGlbl()) {
          Codegen.generate("la","$t0","_" + myStrVal);
@@ -1913,7 +1913,7 @@ class IdNode extends ExpNode {
      * Generate MIPS code for this node
      */
     public void codegen() {
-      System.out.println("IdNode's codegen called");
+     // System.out.println("IdNode's codegen called");
       // Load data from this var's address & push value
       if (mySym.isGlbl()) {
          Codegen.generate("lw","$t0","_" + myStrVal);
@@ -2154,7 +2154,7 @@ class AssignNode extends ExpNode {
      * Generate MIPS code for this node
      */
     public void codegen() {
-      System.out.println("AssignNode's codegen called");
+      //System.out.println("AssignNode's codegen called");
       
       // Put myExp's value into $t0
       myExp.codegen();
@@ -2430,7 +2430,7 @@ class UnaryMinusNode extends UnaryExpNode {
      * Generate MIPS code for this node
      */
     public void codegen() {
-      System.out.println("UnaryMinusNode's codegen called");
+     // System.out.println("UnaryMinusNode's codegen called");
       
       // Evaluate expression & pop into $t0
       myExp.codegen();
@@ -2478,7 +2478,7 @@ class NotNode extends UnaryExpNode {
      * Generate MIPS code for this node
      */
     public void codegen() {
-      System.out.println("NotNode's codegen called");
+     // System.out.println("NotNode's codegen called");
 
       // eval myExp and put in $t0
       myExp.codegen();
@@ -2618,7 +2618,7 @@ abstract class EqualityExpNode extends BinaryExpNode {
      * Generate MIPS code for this node
      */
     public void codegen() {
-      System.out.println("EqualityExpNode's codegen called");
+     // System.out.println("EqualityExpNode's codegen called");
       // Get true & done labels
       String tLbl = Codegen.nextLabel();
       String dLbl = Codegen.nextLabel();
@@ -2696,7 +2696,7 @@ abstract class RelationalExpNode extends BinaryExpNode {
      * Generate MIPS code for this node
      */
     public void codegen() {
-      System.out.println("RelationalExpNode's codegen called");
+     // System.out.println("RelationalExpNode's codegen called");
       // Get true & done labels
       String tLbl = Codegen.nextLabel();
       String dLbl = Codegen.nextLabel();
