@@ -22,17 +22,19 @@ int f2(int p1, int p2){
 }
 int f1(){
    //test assignment
+   bool b1;
    i1 = 1;
    i2 = 2;
    i3 = 3;
    i4 = 4;
    i2 = i1 = i3;
+   b1 = true;
    //test + - * /
    i1 = (i1 + i2 * i3)/i4;
    //test ++ --
    i1--;
    //test if else, while,  ==, >= <=, >, <
-   if(i1 == i2){
+   if(b1 == (i1 == i2)){
       while(i2 > i3){
          i3 ++;
       }
@@ -48,15 +50,16 @@ int f1(){
 }
 
 void main() {
-   if(f1() > 1){
-      bool b1;
+   bool b1;
+   if(f1() > 1){    
       b1 = f1() < 5;
    }
-   if(f4(false, f2())){
+   if(f4(false, f2(1, -1))){
       f5();
       if("aaa" == "aaa"){
          cout << "aaa";
       }
+      b1 = "aa" != "ab";
    }
    cout << "Please enter 1 to exit program, 0 to continue:\n";
    cin >> done;
